@@ -1,0 +1,8 @@
+# JetBrains IDEs specific
+.idea/
+
+# Dependency directories
+node_modules/
+
+# dotenv environment variables file
+.env
