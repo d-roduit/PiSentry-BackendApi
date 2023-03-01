@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import v1Router from './api/v1/router.js';
 
 const port = process.env.PORT;
 const app = express();
@@ -14,6 +15,8 @@ const logMiddleware = (req, res, next) => {
 };
 
 app.use(logMiddleware);
+
+app.use('/v1', v1Router);
 
 app.listen(port, () => console.log(`Express server listening on port ${port}...`));
 
