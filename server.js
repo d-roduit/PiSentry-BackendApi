@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import v1Router from './api/v1/router.js';
+import './dbConnection.js'
 
 const port = process.env.PORT;
 const app = express();
