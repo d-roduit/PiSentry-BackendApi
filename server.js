@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json()); // For parsing application/json request body
 
 const logMiddleware = (req, res, next) => {
-    console.log(`request to ${req.originalUrl} received`);
+    console.log(`${req.method} ${req.originalUrl} received`);
     next();
 };
 
