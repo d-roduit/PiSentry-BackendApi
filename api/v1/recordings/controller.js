@@ -4,13 +4,29 @@ import dbConnection from '../../../dbConnection.js';
 
 const { cameraApiUrl } = config;
 
-export const getRecordings = (req, res) => {
-    new FetchRequest(`${cameraApiUrl}/recordings/`)
-        .options({ method: 'GET' })
-        .success((data) => res.json(data))
-        .responseNotOk((response) => res.status(response.statusCode).send(response.statusText))
-        .exception((err) => res.status(500).send(err.message))
-        .make();
+export const getRecordings = async (req, res) => {
+    const { user_id } = req.pisentryParams.authorizedUser;
+
+    const sqlQuery = `
+        SELECT detection_session.session_id AS 'detection_session_id', JSON_ARRAYAGG(JSON_OBJECT(
+                'recording_id', recording.recording_id,
+                'recorded_at', recording.recorded_at,
+                'recording_filename', recording.filename
+        )) AS 'recordings'
+        FROM recording
+        JOIN detection_session ON recording.FK_detection_session_id = detection_session.session_id
+        WHERE detection_session.FK_user_id = ?
+        GROUP BY detection_session.session_id
+        ORDER BY detection_session.session_id DESC
+    `;
+
+    try {
+        const [rows] = await dbConnection.execute(sqlQuery, [user_id]);
+        res.json({ detectionSessions: rows });
+    } catch (e) {
+        console.log('Exception caught in getRecordings():', e);
+        res.status(500).json({ error: 'Could not get recordings' });
+    }
 };
 
 export const getRecording = (req, res) => {
