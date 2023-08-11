@@ -19,7 +19,7 @@ export const getRecording = (req, res) => {
         .options({ method: 'GET' })
         .responseType(FetchRequest.ResponseType.ArrayBuffer)
         .success((data) => res.type('video/mp4').send(Buffer.from(data)))
-        .responseNotOk((response) => res.status(response.statusCode).send(response.statusText))
+        .responseNotOk((response) => res.status(response.status).send(response.statusText))
         .exception((err) => res.status(500).send(err.message))
         .make();
 };
