@@ -9,7 +9,7 @@ export const createSession = async (req, res) => {
 
     try {
         const [rows] = await dbConnection.execute(sqlQuery, [user_id]);
-        res.type('application/json').send({ session_id: rows.insertId });
+        res.json({ session_id: rows.insertId });
     } catch (e) {
         console.log('Exception caught in createSession():', e);
         res.status(500).json({ error: 'Could not create session' });
