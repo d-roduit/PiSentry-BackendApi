@@ -1,7 +1,7 @@
 import dbConnection from "../../../dbConnection.js";
 
 export const createSession = async (req, res) => {
-    const { user_id } = req.body;
+    const { user_id } = req.pisentryParams.authorizedUser;
 
     const sqlQuery = `
         INSERT INTO detection_session (FK_user_id) VALUES (?)
