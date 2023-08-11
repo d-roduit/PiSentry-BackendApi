@@ -14,7 +14,7 @@ export const getRecordings = (req, res) => {
 };
 
 export const getRecording = (req, res) => {
-    const filename = req.params.filename;
+    const { filename } = req.params;
     new FetchRequest(`${cameraApiUrl}/recordings/${filename}`)
         .options({ method: 'GET' })
         .responseType(FetchRequest.ResponseType.ArrayBuffer)
