@@ -12,5 +12,6 @@ export const createSession = async (req, res) => {
         res.type('application/json').send({ session_id: rows.insertId });
     } catch (e) {
         console.log('Exception caught in createSession():', e);
+        res.status(500).json({ error: 'Could not create session' });
     }
 };
