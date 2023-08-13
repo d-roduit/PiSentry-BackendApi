@@ -1,4 +1,4 @@
-import dbConnection from "../../../dbConnection.js";
+import dbConnectionPool from "../../../dbConnection.js";
 
 export const createSession = async (req, res) => {
     const { user_id } = req.pisentryParams.authorizedUser;
@@ -8,7 +8,7 @@ export const createSession = async (req, res) => {
     `;
 
     try {
-        const [rows] = await dbConnection.execute(sqlQuery, [user_id]);
+        const [rows] = await dbConnectionPool.execute(sqlQuery, [user_id]);
         res.json({ session_id: rows.insertId });
     } catch (e) {
         console.log('Exception caught in createSession():', e);

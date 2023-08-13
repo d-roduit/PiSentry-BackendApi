@@ -1,8 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import v1Router from './api/v1/router.js';
-import './dbConnection.js'
-import dbConnection from "./dbConnection.js";
+import dbConnectionPool from './dbConnection.js';
 
 const port = process.env.PORT;
 const app = express();
@@ -35,7 +34,7 @@ const authMiddleware = async (req, res, next) => {
     `;
 
     try {
-        const [rows] = await dbConnection.execute(sqlQuery, [authorizationToken]);
+        const [rows] = await dbConnectionPool.execute(sqlQuery, [authorizationToken]);
         const tokenFoundInDB = rows.length !== 0;
 
         if (!tokenFoundInDB) {

@@ -1,6 +1,6 @@
 import FetchRequest from '../../../helpers/FetchRequest.js';
 import config from '../../../config/config.js';
-import dbConnection from '../../../dbConnection.js';
+import dbConnectionPool from '../../../dbConnection.js';
 
 const { cameraApiUrl } = config;
 
@@ -21,7 +21,7 @@ export const getRecordings = async (req, res) => {
     `;
 
     try {
-        const [rows] = await dbConnection.execute(sqlQuery, [user_id]);
+        const [rows] = await dbConnectionPool.execute(sqlQuery, [user_id]);
         res.json({ detectionSessions: rows });
     } catch (e) {
         console.log('Exception caught in getRecordings():', e);
@@ -48,7 +48,7 @@ export const createRecording = async (req, res) => {
     `;
 
     try {
-        const [rows] = await dbConnection.execute(sqlQuery, [
+        const [rows] = await dbConnectionPool.execute(sqlQuery, [
             recorded_at,
             filename,
             detection_session_id,
