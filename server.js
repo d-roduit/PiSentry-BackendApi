@@ -10,11 +10,6 @@ app.use(cors());
 
 app.use(express.json()); // For parsing application/json request body
 
-const logMiddleware = (req, res, next) => {
-    console.log(`${req.method} ${req.originalUrl} received`);
-    next();
-};
-
 const authMiddleware = async (req, res, next) => {
     const { access_token: authorizationTokenFromUrlParams } = req.query;
     const authorizationTokenFromHeader = req.get('authorization');
@@ -22,8 +17,10 @@ const authMiddleware = async (req, res, next) => {
     const authorizationToken = authorizationTokenFromHeader ?? authorizationTokenFromUrlParams;
     const authorizationTokenSupplied = typeof authorizationToken !== 'undefined';
 
+    const requestReceived = `${req.method} ${req.originalUrl}`;
+
     if (!authorizationTokenSupplied) {
-        console.log('Unauthorized!');
+        console.log(`${requestReceived} (Unauthorized)`);
         return res.status(401).json({ error: 'Unauthorized!' });
     }
 
@@ -38,7 +35,7 @@ const authMiddleware = async (req, res, next) => {
         const tokenFoundInDB = rows.length !== 0;
 
         if (!tokenFoundInDB) {
-            console.log('Unauthorized!');
+            console.log(`${requestReceived} (Unauthorized)`);
             return res.status(401).json({ error: 'Unauthorized!' });
         }
 
@@ -47,6 +44,8 @@ const authMiddleware = async (req, res, next) => {
         req.pisentryParams = req.pisentryParams || {};
         req.pisentryParams.authorizedUser = user;
 
+        console.log(`${requestReceived} (ok)`);
+
         next();
     } catch (e) {
         console.log('Exception caught in authMiddleware():', e);
@@ -54,7 +53,6 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
-app.use(logMiddleware);
 app.use(authMiddleware);
 
 app.use('/v1', v1Router);
