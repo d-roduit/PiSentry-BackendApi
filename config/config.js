@@ -3,6 +3,8 @@ const commonProperties = {
     db_user: process.env.DB_USER,
     db_password: process.env.DB_PASSWORD,
     db_database: process.env.DB_DATABASE,
+    vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
+    vapidPrivateKey: process.env.VAPID_PRIVATE_KEY,
 };
 
 const development = {
