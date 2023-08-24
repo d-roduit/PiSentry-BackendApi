@@ -123,32 +123,39 @@ export default class FetchRequest {
                 }
                 return;
             }
+
+            let responseData = null;
+            switch (this.responseTypeValue ?? FetchRequest.defaultResponseTypeValue) {
+                case FetchRequest.ResponseType.Json:
+                    responseData = await response.json();
+                    break;
+                case FetchRequest.ResponseType.Text:
+                    responseData = await response.text();
+                    break;
+                case FetchRequest.ResponseType.FormData:
+                    responseData = await response.formData();
+                    break;
+                case FetchRequest.ResponseType.Blob:
+                    responseData = await response.blob();
+                    break;
+                case FetchRequest.ResponseType.ArrayBuffer:
+                    responseData = await response.arrayBuffer();
+                    break;
+                case FetchRequest.ResponseType.Clone:
+                    responseData = await response.clone();
+                    break;
+                default:
+                    responseData = await response.json();
+                    break;
+            }
+
             const successCallback = this.successCallback ?? FetchRequest.defaultSuccessCallback;
             if (successCallback !== null) {
-                let responseData = null;
-                switch (this.responseTypeValue ?? FetchRequest.defaultResponseTypeValue) {
-                    case FetchRequest.ResponseType.Json:
-                        responseData = await response.json();
-                        break;
-                    case FetchRequest.ResponseType.Text:
-                        responseData = await response.text();
-                        break;
-                    case FetchRequest.ResponseType.FormData:
-                        responseData = await response.formData();
-                        break;
-                    case FetchRequest.ResponseType.Blob:
-                        responseData = await response.blob();
-                        break;
-                    case FetchRequest.ResponseType.ArrayBuffer:
-                        responseData = await response.arrayBuffer();
-                        break;
-                    case FetchRequest.ResponseType.Clone:
-                        responseData = await response.clone();
-                        break;
-                }
-
                 successCallback(responseData);
+                return;
             }
+
+            return responseData;
         } catch (err) {
             const exceptionCallback = this.exceptionCallback ?? FetchRequest.defaultExceptionCallback;
             if (exceptionCallback !== null) {
