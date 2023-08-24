@@ -22,7 +22,7 @@ export const getRecordings = async (req, res) => {
 
     try {
         const [rows] = await dbConnectionPool.execute(sqlQuery, [user_id]);
-        res.json({ detectionSessions: rows });
+        res.json(rows);
     } catch (e) {
         console.log('Exception caught in getRecordings():', e);
         res.status(500).json({ error: 'Could not get recordings' });
