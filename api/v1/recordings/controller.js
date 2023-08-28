@@ -41,16 +41,18 @@ export const getRecording = (req, res) => {
 };
 
 export const createRecording = async (req, res) => {
-    const { recorded_at, filename, detection_session_id, camera_id } = req.body;
+    const { recorded_at, filename, detected_object_type, detection_session_id, camera_id } = req.body;
 
     const sqlQuery = `
-        INSERT INTO recording (recorded_at, filename, FK_detection_session_id, FK_camera_id) VALUES (?, ?, ?, ?)
+        INSERT INTO recording (recorded_at, filename, FK_detectable_object_id, FK_detection_session_id, FK_camera_id)
+        VALUES (?, ?, (SELECT object_id FROM detectable_object WHERE object_type = ?), ?, ?)
     `;
 
     try {
         const [rows] = await dbConnectionPool.execute(sqlQuery, [
             recorded_at,
             filename,
+            detected_object_type,
             detection_session_id,
             camera_id
         ]);
