@@ -64,3 +64,18 @@ export const createRecording = async (req, res) => {
     }
 };
 
+export const deleteRecording = async (req, res) => {
+    const { filename } = req.body;
+
+    const sqlQuery = `DELETE FROM recording WHERE filename = ?`;
+
+    try {
+        const [rows] = await dbConnectionPool.execute(sqlQuery, [filename]);
+        
+        res.json(rows);
+    } catch (e) {
+        console.log('Exception caught in deleteRecording():', e);
+        res.status(500).json({ error: 'Could not delete recording' });
+    }
+};
+
