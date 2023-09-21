@@ -11,7 +11,8 @@ export const getRecordings = async (req, res) => {
         SELECT detection_session.session_id AS 'detection_session_id', JSON_ARRAYAGG(JSON_OBJECT(
                 'recording_id', recording.recording_id,
                 'recorded_at', recording.recorded_at,
-                'recording_filename', recording.filename
+                'recording_filename', recording.recording_filename,
+                'thumbnail_filename', recording.thumbnail_filename
         )) AS 'recordings'
         FROM recording
         JOIN detection_session ON recording.FK_detection_session_id = detection_session.session_id
@@ -41,20 +42,21 @@ export const getRecording = (req, res) => {
 };
 
 export const createRecording = async (req, res) => {
-    const { recorded_at, filename, detected_object_type, detection_session_id, camera_id } = req.body;
+    const { recorded_at, recording_filename, thumbnail_filename, detected_object_type, detection_session_id, camera_id } = req.body;
 
     const sqlQuery = `
-        INSERT INTO recording (recorded_at, filename, FK_detectable_object_id, FK_detection_session_id, FK_camera_id)
-        VALUES (?, ?, (SELECT object_id FROM detectable_object WHERE object_type = ?), ?, ?)
+        INSERT INTO recording (recorded_at, recording_filename, thumbnail_filename, FK_detectable_object_id, FK_detection_session_id, FK_camera_id)
+        VALUES (?, ?, ?, (SELECT object_id FROM detectable_object WHERE object_type = ?), ?, ?)
     `;
 
     try {
         const [rows] = await dbConnectionPool.execute(sqlQuery, [
             recorded_at,
-            filename,
+            recording_filename,
+            thumbnail_filename,
             detected_object_type,
             detection_session_id,
-            camera_id
+            camera_id,
         ]);
 
         res.json({ recording_id: rows.insertId });
@@ -65,12 +67,12 @@ export const createRecording = async (req, res) => {
 };
 
 export const deleteRecording = async (req, res) => {
-    const { filename } = req.body;
+    const { recording_filename } = req.body;
 
-    const sqlQuery = `DELETE FROM recording WHERE filename = ?`;
+    const sqlQuery = `DELETE FROM recording WHERE recording_filename = ?`;
 
     try {
-        const [rows] = await dbConnectionPool.execute(sqlQuery, [filename]);
+        const [rows] = await dbConnectionPool.execute(sqlQuery, [recording_filename]);
         
         res.json(rows);
     } catch (e) {
