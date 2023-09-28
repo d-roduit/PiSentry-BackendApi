@@ -8,17 +8,34 @@ export const getRecordings = async (req, res) => {
     const { user_id } = req.pisentryParams.authorizedUser;
 
     const sqlQuery = `
-        SELECT detection_session.session_id AS 'detection_session_id', JSON_ARRAYAGG(JSON_OBJECT(
-                'recording_id', recording.recording_id,
-                'recorded_at', recording.recorded_at,
-                'recording_filename', recording.recording_filename,
-                'thumbnail_filename', recording.thumbnail_filename
-        )) AS 'recordings'
-        FROM recording
-        JOIN detection_session ON recording.FK_detection_session_id = detection_session.session_id
-        WHERE detection_session.FK_user_id = ?
-        GROUP BY detection_session.session_id
-        ORDER BY detection_session.session_id DESC
+        SELECT
+            subquery.recordings_date AS 'recordings_date',
+            JSON_ARRAYAGG(JSON_OBJECT(
+                'detection_session_id', subquery.detection_session_id,
+                'recordings', subquery.recordings
+            )) AS 'detection_sessions'
+        FROM (
+            SELECT
+                DATE(recording.recorded_at) AS 'recordings_date',
+                detection_session.session_id AS 'detection_session_id',
+                JSON_ARRAYAGG(JSON_OBJECT(
+                    'recording_id', recording.recording_id,
+                    'recorded_at', recording.recorded_at,
+                    'recording_filename', recording.recording_filename,
+                    'thumbnail_filename', recording.thumbnail_filename,
+                    'object_type', detectable_object.object_type
+                )) AS 'recordings'
+            FROM recording
+                JOIN detection_session ON recording.FK_detection_session_id = detection_session.session_id
+                JOIN detectable_object ON recording.FK_detectable_object_id = detectable_object.object_id
+            WHERE detection_session.FK_user_id = ?
+            GROUP BY
+                detection_session.session_id,
+                DATE(recording.recorded_at)
+            ORDER BY detection_session.session_id DESC
+        ) AS subquery
+        GROUP BY subquery.recordings_date
+        ORDER BY subquery.recordings_date DESC
     `;
 
     try {
