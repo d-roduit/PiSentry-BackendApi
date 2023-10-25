@@ -159,7 +159,10 @@ export default class FetchRequest {
             const exceptionCallback = this.exceptionCallback ?? FetchRequest.defaultExceptionCallback;
             if (exceptionCallback !== null) {
                 exceptionCallback(err, response);
+                return;
             }
+
+            throw err;
         }
     }
 }
