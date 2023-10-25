@@ -49,12 +49,44 @@ export const getRecordings = async (req, res) => {
 
 export const getRecording = (req, res) => {
     const { filename } = req.params;
+
     new FetchRequest(`${cameraApiUrl}/recordings/${filename}`)
-        .options({ method: 'GET' })
-        .responseType(FetchRequest.ResponseType.ArrayBuffer)
-        .success((data) => res.type('video/mp4').send(Buffer.from(data)))
-        .responseNotOk((response) => res.status(response.status).send(response.statusText))
-        .exception((err) => res.status(500).send(err.message))
+        .options({
+            method: 'GET',
+            headers: {
+                'User-Agent': req.get('User-Agent'),
+                'Range': req.get('Range'),
+                'Accept': req.get('Accept'),
+                'Accept-Encoding': req.get('Accept-Encoding'),
+                'Accept-Language': req.get('Accept-Language'),
+            }
+        })
+        .success(async (responseData, response) => {
+            await response.body.pipeTo(
+                new WritableStream({
+                    start() {
+                        res.status(response.status);
+                        response.headers.forEach((headerValue, headerName) => res.set(headerName, headerValue));
+                    },
+                    write(chunk) {
+                        res.write(chunk);
+                    },
+                    close() {
+                        res.end();
+                    },
+                    abort() {
+                        res.end();
+                    },
+                })
+            );
+        })
+        .responseNotOk((response) => {
+            res.status(response.status).send(response.statusText);
+        })
+        .exception((err) => {
+            console.log('Exception caught in getRecording():', err);
+            res.status(500).send(err.message);
+        })
         .make();
 };
 
