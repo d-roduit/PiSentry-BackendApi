@@ -13,7 +13,7 @@ export default class FetchRequest {
         }
     };
     static defaultOptionsObject = {};
-    static defaultResponseTypeValue = FetchRequest.ResponseType.Json;
+    static defaultResponseTypeValue = null;
     static defaultSuccessCallback = null;
     static defaultResponseNotOkCallback = null;
     static defaultExceptionCallback = null;
@@ -112,9 +112,11 @@ export default class FetchRequest {
     }
 
     async make() {
+        let response = null;
+
         try {
             const options = this.optionsObject ?? FetchRequest.defaultOptionsObject;
-            const response = await fetch(this.url, options);
+            response = await fetch(this.url, options);
 
             if (!response.ok) {
                 const responseNotOkCallback = this.responseNotOkCallback ?? FetchRequest.defaultResponseNotOkCallback;
@@ -144,22 +146,19 @@ export default class FetchRequest {
                 case FetchRequest.ResponseType.Clone:
                     responseData = await response.clone();
                     break;
-                default:
-                    responseData = await response.json();
-                    break;
             }
 
             const successCallback = this.successCallback ?? FetchRequest.defaultSuccessCallback;
             if (successCallback !== null) {
-                successCallback(responseData);
+                successCallback(responseData, response);
                 return;
             }
 
-            return responseData;
+            return { responseData, response };
         } catch (err) {
             const exceptionCallback = this.exceptionCallback ?? FetchRequest.defaultExceptionCallback;
             if (exceptionCallback !== null) {
-                exceptionCallback(err);
+                exceptionCallback(err, response);
             }
         }
     }
