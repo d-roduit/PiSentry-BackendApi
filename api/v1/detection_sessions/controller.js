@@ -1,4 +1,4 @@
-import dbConnectionPool from "../../../dbConnection.js";
+import dbConnectionPool from '../../../dbConnection.js';
 
 export const createSession = async (req, res) => {
     const { user_id } = req.pisentryParams.authorizedUser;
