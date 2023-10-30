@@ -22,7 +22,9 @@ export const getRecordings = async (req, res) => {
                     'recording_id', recording.recording_id,
                     'recorded_at', recording.recorded_at,
                     'recording_filename', recording.recording_filename,
+                    'recording_extension', recording.recording_extension,
                     'thumbnail_filename', recording.thumbnail_filename,
+                    'thumbnail_extension', recording.thumbnail_extension,
                     'object_type', detectable_object.object_type
                 )) AS 'recordings'
             FROM recording
@@ -91,18 +93,38 @@ export const getRecording = (req, res) => {
 };
 
 export const createRecording = async (req, res) => {
-    const { recorded_at, recording_filename, thumbnail_filename, detected_object_type, detection_session_id, camera_id } = req.body;
+    const {
+        recorded_at,
+        recording_filename,
+        recording_extension,
+        thumbnail_filename,
+        thumbnail_extension,
+        detected_object_type,
+        detection_session_id,
+        camera_id
+    } = req.body;
 
     const sqlQuery = `
-        INSERT INTO recording (recorded_at, recording_filename, thumbnail_filename, FK_detectable_object_id, FK_detection_session_id, FK_camera_id)
-        VALUES (?, ?, ?, (SELECT object_id FROM detectable_object WHERE object_type = ?), ?, ?)
+        INSERT INTO recording (
+            recorded_at,
+            recording_filename,
+            recording_extension,
+            thumbnail_filename,
+            thumbnail_extension,
+            FK_detectable_object_id,
+            FK_detection_session_id,
+            FK_camera_id
+        )
+        VALUES (?, ?, ?, ?, ?, (SELECT object_id FROM detectable_object WHERE object_type = ?), ?, ?)
     `;
 
     try {
         const [rows] = await dbConnectionPool.execute(sqlQuery, [
             recorded_at,
             recording_filename,
+            recording_extension,
             thumbnail_filename,
+            thumbnail_extension,
             detected_object_type,
             detection_session_id,
             camera_id,
