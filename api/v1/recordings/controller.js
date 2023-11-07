@@ -25,7 +25,8 @@ export const getRecordings = async (req, res) => {
                     'recording_extension', recording.recording_extension,
                     'thumbnail_filename', recording.thumbnail_filename,
                     'thumbnail_extension', recording.thumbnail_extension,
-                    'object_type', detectable_object.object_type
+                    'object_type', detectable_object.object_type,
+                    'camera_id', recording.FK_camera_id
                 )) AS 'recordings'
             FROM recording
                 JOIN detection_session ON recording.FK_detection_session_id = detection_session.session_id
@@ -51,8 +52,9 @@ export const getRecordings = async (req, res) => {
 
 export const getRecording = (req, res) => {
     const { filename } = req.params;
+    const { port: cameraPort } = req.pisentryParams.camera;
 
-    new FetchRequest(`${cameraApiUrl}/recordings/${filename}`)
+    new FetchRequest(`${cameraApiUrl}:${cameraPort}/recordings/${filename}`)
         .options({
             method: 'GET',
             headers: {

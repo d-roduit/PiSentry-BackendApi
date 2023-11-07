@@ -5,7 +5,8 @@ const { cameraApiUrl } = config;
 
 export const getThumbnail = (req, res) => {
     const { thumbnail_filename } = req.params;
-    new FetchRequest(`${cameraApiUrl}/thumbnails/${thumbnail_filename}`)
+    const { port: cameraPort } = req.pisentryParams.camera;
+    new FetchRequest(`${cameraApiUrl}:${cameraPort}/thumbnails/${thumbnail_filename}`)
         .options({ method: 'GET' })
         .responseType(FetchRequest.ResponseType.ArrayBuffer)
         .success((data) => res.type('image/jpeg').send(Buffer.from(data)))
