@@ -50,11 +50,11 @@ export const getRecordings = async (req, res) => {
     }
 };
 
-export const getRecording = (req, res) => {
+export const getRecording = async (req, res) => {
     const { filename } = req.params;
     const { port: cameraPort } = req.pisentryParams.camera;
 
-    new FetchRequest(`${cameraApiUrl}:${cameraPort}/recordings/${filename}`)
+    await new FetchRequest(`${cameraApiUrl}:${cameraPort}/recordings/${filename}`)
         .options({
             method: 'GET',
             headers: {

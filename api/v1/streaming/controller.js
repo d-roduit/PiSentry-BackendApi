@@ -3,9 +3,9 @@ import config from '../../../config/config.js';
 
 const { cameraApiUrl } = config;
 
-export const startStreaming = (req, res) => {
+export const startStreaming = async (req, res) => {
     const { port: cameraPort } = req.pisentryParams.camera;
-    new FetchRequest(`${cameraApiUrl}:${cameraPort}/streaming/start`)
+    await new FetchRequest(`${cameraApiUrl}:${cameraPort}/streaming/start`)
         .options({ method: 'POST' })
         .success(() => res.status(200).end())
         .responseNotOk((response) => res.status(response.status).send(response.statusText))
@@ -13,9 +13,9 @@ export const startStreaming = (req, res) => {
         .make();
 };
 
-export const stopStreaming = (req, res) => {
+export const stopStreaming = async (req, res) => {
     const { port: cameraPort } = req.pisentryParams.camera;
-    new FetchRequest(`${cameraApiUrl}:${cameraPort}/streaming/stop`)
+    await new FetchRequest(`${cameraApiUrl}:${cameraPort}/streaming/stop`)
         .options({ method: 'POST' })
         .success(() => res.status(200).end())
         .responseNotOk((response) => res.status(response.status).send(response.statusText))
