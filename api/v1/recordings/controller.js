@@ -132,7 +132,7 @@ export const createRecording = async (req, res) => {
             camera_id,
         ]);
 
-        res.json({ recording_id: rows.insertId });
+        res.status(201).json({ recording_id: rows.insertId });
     } catch (e) {
         console.log('Exception caught in createRecording():', e);
         res.status(500).json({ error: 'Could not create recording' });
