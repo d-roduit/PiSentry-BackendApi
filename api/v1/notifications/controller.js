@@ -12,9 +12,26 @@ const vapidDetails = {
 
 webpush.setVapidDetails(vapidDetails.subject, vapidDetails.publicKey, vapidDetails.privateKey);
 
+const ensureValidTopic = (topic) => {
+    let validTopic = topic ?? 'default-topic';
+
+    if (typeof validTopic !== 'string') {
+        validTopic = String(validTopic);
+    }
+
+    if (validTopic.length > 32) {
+        validTopic = validTopic.substring(0, 32);
+    } else if (validTopic.length < 32) {
+        validTopic = validTopic.padEnd(32, '0');
+    }
+
+    return validTopic;
+}
+
 export const sendNotifications = async (req, res) => {
     const { user_id } = req.pisentryParams.authorizedUser;
-    const { title, message, icon, timestamp, topic } = req.body;
+    const { title, message, icon, timestamp } = req.body;
+    let { topic } = req.body;
 
     const sqlQuery = `
         SELECT subscription_id, subscription, FK_user_id
@@ -24,10 +41,14 @@ export const sendNotifications = async (req, res) => {
 
     let errorMessage = 'Could not get subscriptions';
 
+    // Make sure topic is 32 characters (workaround for the possible "BadWebPushTopic" error with Apple webpush otherwise)
+    // https://stackoverflow.com/questions/75685856/what-is-the-cause-of-badwebpushtopic-from-https-web-push-apple-com
+    topic = ensureValidTopic(topic);
+
     const pushOptions = {
         urgency: 'high', // whether to send the notifications immediately or prioritize the recipient’s device power
         TTL: 7 * 24 * 60 * 60, // 7 days * 24 hours/day * 60 minutes/hour * 60 seconds/minute
-        topic: topic || 'default-topic',
+        topic: topic,
     };
 
     try {
