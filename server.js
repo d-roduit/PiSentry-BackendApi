@@ -6,6 +6,8 @@ import { authMiddleware } from './middlewares.js';
 const port = process.env.PORT;
 const app = express();
 
+app.options('*', cors()); // To put before other requests. Handles the CORS pre-flight requests.
+
 app.use(cors());
 
 app.use(express.json()); // For parsing application/json request body
