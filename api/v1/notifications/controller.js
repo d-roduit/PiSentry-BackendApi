@@ -33,7 +33,7 @@ export const sendNotifications = async (req, res) => {
     const { title, message, icon, timestamp } = req.body;
     let { topic } = req.body;
 
-    const sqlQuery = `
+    const selectSubscriptionsSqlQuery = `
         SELECT subscription_id, subscription, FK_user_id
         FROM notification_subscription
         WHERE FK_user_id = ?
@@ -52,9 +52,9 @@ export const sendNotifications = async (req, res) => {
     };
 
     try {
-        const [rows] = await dbConnectionPool.execute(sqlQuery, [user_id]);
+        const [subscriptionsFromDb] = await dbConnectionPool.execute(selectSubscriptionsSqlQuery, [user_id]);
 
-        const sendNotificationsPromises = rows.map(({ subscription }) => (
+        const sendNotificationsPromises = subscriptionsFromDb.map(({ subscription }) => (
             webpush.sendNotification(
                 JSON.parse(subscription),
                 JSON.stringify({ title, message, icon, timestamp }),
@@ -64,9 +64,53 @@ export const sendNotifications = async (req, res) => {
 
         errorMessage = 'Could not send notifications';
 
-        await Promise.all(sendNotificationsPromises);
+        const promiseResults = await Promise.allSettled(sendNotificationsPromises);
 
-        res.status(204).end();
+        let hasAnyPromiseRejected = false;
+        const outdatedSubscriptionIds = [];
+
+        promiseResults.forEach((promiseResult, index) => {
+            if (promiseResult.status === 'rejected') {
+                hasAnyPromiseRejected = true;
+
+                /**
+                 * Look up which HTTP status code for which Web Push errors:
+                 * https://pushpad.xyz/blog/web-push-errors-explained-with-http-status-codes
+                 */
+                switch (promiseResult.reason?.statusCode) {
+                    case 404: // the url endpoint of the push subscription is invalid
+                    case 410: // the push subscription for this url endpoint is expired or no longer exists
+                        const correspondingSubscriptionId = subscriptionsFromDb[index].subscription_id;
+                        outdatedSubscriptionIds.push(correspondingSubscriptionId);
+                        break;
+                }
+            }
+        });
+
+        const responseStatusCode = hasAnyPromiseRejected ? 500 : 201;
+        res.status(responseStatusCode).json(promiseResults);
+
+        if (outdatedSubscriptionIds.length === 0) {
+            return;
+        }
+
+        // Delete outdated subscriptions
+        const deleteOutdatedSubscriptionsSqlQuery = `
+            DELETE FROM notification_subscription
+            WHERE FK_user_id = ? AND subscription_id IN (?)
+        `;
+
+        /**
+         * We use `.query()` instead of `.execute()` because `.execute()` does not support the "WHERE IN ()" MySQL clause.
+         * We can safely use `.query()` here as both parameter values come directly from the database.
+         * The array of ids MUST be enclosed in another array to work.
+         * The explanation: https://github.com/sidorares/node-mysql2/issues/1347
+         */
+        try {
+            await dbConnectionPool.query(deleteOutdatedSubscriptionsSqlQuery, [user_id, [outdatedSubscriptionIds]]);
+        } catch (e) {
+            console.log('Exception caught in sendNotifications(): Could not delete outdated subscriptions:', e);
+        }
     } catch (e) {
         console.log('Exception caught in sendNotifications():', e);
         res.status(500).json({ error: errorMessage });
