@@ -1,10 +1,10 @@
 import express from 'express';
 import { startStreaming, stopStreaming } from './controller.js';
-import { requireCameraMiddleware } from '../../../middlewares.js';
+import { requireCameraToExist } from '../../../middlewares.js';
 
 const router = express.Router();
 
-router.post('/:camera_id/start', requireCameraMiddleware, startStreaming);
-router.post('/:camera_id/stop', requireCameraMiddleware, stopStreaming);
+router.post('/:camera_id/start', requireCameraToExist, startStreaming);
+router.post('/:camera_id/stop', requireCameraToExist, stopStreaming);
 
 export default router;

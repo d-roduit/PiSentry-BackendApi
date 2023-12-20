@@ -1,6 +1,6 @@
 import dbConnectionPool from './dbConnection.js';
 
-export const authMiddleware = async (req, res, next) => {
+export const requireAuth = async (req, res, next) => {
     const { access_token: authorizationTokenFromUrlParams } = req.query;
     const authorizationTokenFromHeader = req.get('authorization');
 
@@ -38,12 +38,12 @@ export const authMiddleware = async (req, res, next) => {
 
         next();
     } catch (e) {
-        console.log('Exception caught in authMiddleware():', e);
+        console.log('Exception caught in requireAuth():', e);
         return res.status(500).json({ error: 'Could not verify authorization'});
     }
 };
 
-export const requireCameraMiddleware = async (req, res, next) => {
+export const requireCameraToExist = async (req, res, next) => {
     const cameraId = parseInt(req.params.camera_id);
 
     const isCameraIdSupplied = !Number.isNaN(cameraId) && cameraId >= 0;
@@ -75,7 +75,7 @@ export const requireCameraMiddleware = async (req, res, next) => {
 
         next();
     } catch (e) {
-        console.log('Exception caught in requireCameraMiddleware():', e);
+        console.log('Exception caught in requireCameraToExist():', e);
         return res.status(500).json({ error: 'Could not get camera data'});
     }
 };

@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import v1Router from './api/v1/router.js';
-import { authMiddleware } from './middlewares.js';
+import { requireAuth } from './middlewares.js';
 
 const port = process.env.PORT;
 const app = express();
@@ -12,7 +12,7 @@ app.use(cors());
 
 app.use(express.json()); // For parsing application/json request body
 
-app.use(authMiddleware);
+app.use(requireAuth);
 
 app.use('/v1', v1Router);
 

@@ -1,9 +1,9 @@
 import express from 'express';
 import { getThumbnail } from './controller.js';
-import { requireCameraMiddleware } from '../../../middlewares.js';
+import { requireCameraToExist } from '../../../middlewares.js';
 
 const router = express.Router();
 
-router.get('/:camera_id/:thumbnail_filename', requireCameraMiddleware, getThumbnail);
+router.get('/:camera_id/:thumbnail_filename', requireCameraToExist, getThumbnail);
 
 export default router;
