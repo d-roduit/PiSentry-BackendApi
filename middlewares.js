@@ -43,14 +43,23 @@ export const requireAuth = async (req, res, next) => {
     }
 };
 
-export const requireCameraToExist = async (req, res, next) => {
+export const requireCameraIdToBeInteger = (req, res, next) => {
     const cameraId = parseInt(req.params.camera_id);
 
-    const isCameraIdSupplied = !Number.isNaN(cameraId) && cameraId >= 0;
+    const isCameraIdAcceptable = !Number.isNaN(cameraId) && cameraId >= 0;
 
-    if (!isCameraIdSupplied) {
-        return res.status(400).json({ error: 'A positive integer must be supplied for camera id' });
+    if (!isCameraIdAcceptable) {
+        return res.status(400).json({ error: 'Camera id must be a positive integer' });
     }
+
+    req.pisentryParams = req.pisentryParams || {};
+    req.pisentryParams.cameraId = cameraId;
+
+    next();
+};
+
+export const requireCameraToExist = async (req, res, next) => {
+    requireCameraIdToBeInteger(req, res, () => {});
 
     const sqlQuery = `
         SELECT camera_id, name, port, FK_user_id
@@ -58,6 +67,7 @@ export const requireCameraToExist = async (req, res, next) => {
         WHERE camera_id = ? AND FK_user_id = ? 
     `;
 
+    const { cameraId } = req.pisentryParams;
     const { user_id } = req.pisentryParams.authorizedUser;
 
     try {
