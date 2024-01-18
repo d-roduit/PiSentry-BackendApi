@@ -101,13 +101,14 @@ export const sendNotifications = async (req, res) => {
         `;
 
         /**
-         * We use `.query()` instead of `.execute()` because `.execute()` does not support the "WHERE IN ()" MySQL clause.
-         * We can safely use `.query()` here as both parameter values come directly from the database.
-         * The array of ids MUST be enclosed in another array to work.
-         * The explanation: https://github.com/sidorares/node-mysql2/issues/1347
+         * We use `.query()` instead of `.execute()` because `.execute()` does not support taking arrays or objects as parameter.
+         * On the other hand, `.query()` does client side placeholders substitution and thus allows arrays and objects.
+         * The explanation:
+         * https://github.com/sidorares/node-mysql2/issues/1347
+         * https://github.com/sidorares/node-mysql2/issues/553#issuecomment-437221838
          */
         try {
-            await dbConnectionPool.query(deleteOutdatedSubscriptionsSqlQuery, [user_id, [outdatedSubscriptionIds]]);
+            await dbConnectionPool.query(deleteOutdatedSubscriptionsSqlQuery, [user_id, outdatedSubscriptionIds]);
         } catch (e) {
             console.log('Exception caught in sendNotifications(): Could not delete outdated subscriptions:', e);
         }
