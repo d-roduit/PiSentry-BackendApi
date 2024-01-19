@@ -63,7 +63,16 @@ export const requireCameraToExist = async (req, res, next) => {
     requireCameraIdToBeInteger(req, res, () => {});
 
     const sqlQuery = `
-        SELECT camera_id, name, port, FK_user_id
+        SELECT
+            camera_id,
+            name,
+            port,
+            TIME_FORMAT(detection_start_time, '%H:%i') AS 'detection_start_time',
+            TIME_FORMAT(detection_end_time, '%H:%i') AS 'detection_end_time',
+            detection_areas,
+            TIME_FORMAT(notifications_start_time, '%H:%i') AS 'notifications_start_time',
+            TIME_FORMAT(notifications_end_time, '%H:%i') AS 'notifications_end_time',
+            FK_user_id
         FROM camera
         WHERE camera_id = ? AND FK_user_id = ? 
     `;
