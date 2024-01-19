@@ -1,6 +1,6 @@
 import webpush from 'web-push';
 import config from '../../../config/config.js';
-import dbConnectionPool from "../../../dbConnection.js";
+import dbConnectionPool from '../../../dbConnection.js';
 
 const { vapidPublicKey, vapidPrivateKey } = config;
 
