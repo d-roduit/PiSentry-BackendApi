@@ -5,6 +5,7 @@ import streamingRouter from './streaming/router.js';
 import recordingsRouter from './recordings/router.js';
 import thumbnailsRouter from './thumbnails/router.js';
 import notificationsRouter from './notifications/router.js';
+import detectableObjectsRouter from './detectable_objects/router.js';
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.use('/streaming', streamingRouter);
 router.use('/recordings', recordingsRouter);
 router.use('/thumbnails', thumbnailsRouter);
 router.use('/notifications', notificationsRouter);
+router.use('/detectable-objects', detectableObjectsRouter);
 
 export default router;
