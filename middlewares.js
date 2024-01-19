@@ -1,4 +1,5 @@
 import dbConnectionPool from './dbConnection.js';
+import { isStringPositiveInteger } from './helpers/validation.js';
 
 export const requireAuth = async (req, res, next) => {
     const { access_token: authorizationTokenFromUrlParams } = req.query;
@@ -44,13 +45,13 @@ export const requireAuth = async (req, res, next) => {
 };
 
 export const requireCameraIdToBeInteger = (req, res, next) => {
-    const cameraId = parseInt(req.params.camera_id);
-
-    const isCameraIdAcceptable = !Number.isNaN(cameraId) && cameraId >= 0;
+    const isCameraIdAcceptable = isStringPositiveInteger(req.params.camera_id);
 
     if (!isCameraIdAcceptable) {
         return res.status(400).json({ error: 'Camera id must be a positive integer' });
     }
+
+    const cameraId = parseInt(req.params.camera_id, 10);
 
     req.pisentryParams = req.pisentryParams || {};
     req.pisentryParams.cameraId = cameraId;
