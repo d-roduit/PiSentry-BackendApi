@@ -7,6 +7,7 @@ import thumbnailsRouter from './thumbnails/router.js';
 import notificationsRouter from './notifications/router.js';
 import detectableObjectsRouter from './detectable_objects/router.js';
 import detectionActionsRouter from './detection_actions/router.js';
+import detectableObjectsActionsRouter from './detectable_objects_actions/router.js';
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use('/thumbnails', thumbnailsRouter);
 router.use('/notifications', notificationsRouter);
 router.use('/detectable-objects', detectableObjectsRouter);
 router.use('/detection-actions', detectionActionsRouter);
+router.use('/detectable-objects-actions', detectableObjectsActionsRouter);
 
 export default router;
