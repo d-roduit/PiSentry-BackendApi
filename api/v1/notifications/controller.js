@@ -1,6 +1,7 @@
 import webpush from 'web-push';
 import config from '../../../config/config.js';
 import dbConnectionPool from '../../../dbConnection.js';
+import { isObjectEmpty } from '../../../helpers/validation.js';
 
 const { vapidPublicKey, vapidPrivateKey } = config;
 
@@ -30,13 +31,22 @@ const ensureValidTopic = (topic) => {
 
 export const sendNotifications = async (req, res) => {
     const { user_id } = req.pisentryParams.authorizedUser;
-    const { title, message, icon, timestamp } = req.body;
-    let { topic } = req.body;
+    const { cameraId } = req.pisentryParams;
+    const { notification } = req.body;
+
+    const isNotificationAcceptable = typeof notification === 'object' && !isObjectEmpty(notification);
+
+    if (!isNotificationAcceptable) {
+        return res.status(400).json({ error: 'Notification must be passed as an object' });
+    }
+
+    const { title, message, icon, timestamp } = notification;
+    let { topic } = notification;
 
     const selectSubscriptionsSqlQuery = `
-        SELECT subscription_id, subscription, FK_user_id
+        SELECT subscription_id, subscription, FK_camera_id, FK_user_id
         FROM notification_subscription
-        WHERE FK_user_id = ?
+        WHERE FK_camera_id = ? AND FK_user_id = ?
     `;
 
     let errorMessage = 'Could not get subscriptions';
@@ -52,11 +62,11 @@ export const sendNotifications = async (req, res) => {
     };
 
     try {
-        const [subscriptionsFromDb] = await dbConnectionPool.execute(selectSubscriptionsSqlQuery, [user_id]);
+        const [subscriptionsFromDb] = await dbConnectionPool.execute(selectSubscriptionsSqlQuery, [cameraId, user_id]);
 
         const sendNotificationsPromises = subscriptionsFromDb.map(({ subscription }) => (
             webpush.sendNotification(
-                JSON.parse(subscription),
+                subscription,
                 JSON.stringify({ title, message, icon, timestamp }),
                 pushOptions
             )
@@ -97,7 +107,7 @@ export const sendNotifications = async (req, res) => {
         // Delete outdated subscriptions
         const deleteOutdatedSubscriptionsSqlQuery = `
             DELETE FROM notification_subscription
-            WHERE FK_user_id = ? AND subscription_id IN (?)
+            WHERE FK_camera_id = ? AND FK_user_id = ? AND subscription_id IN (?)
         `;
 
         /**
@@ -108,7 +118,7 @@ export const sendNotifications = async (req, res) => {
          * https://github.com/sidorares/node-mysql2/issues/553#issuecomment-437221838
          */
         try {
-            await dbConnectionPool.query(deleteOutdatedSubscriptionsSqlQuery, [user_id, outdatedSubscriptionIds]);
+            await dbConnectionPool.query(deleteOutdatedSubscriptionsSqlQuery, [cameraId, user_id, outdatedSubscriptionIds]);
         } catch (e) {
             console.log('Exception caught in sendNotifications(): Could not delete outdated subscriptions:', e);
         }
@@ -119,15 +129,22 @@ export const sendNotifications = async (req, res) => {
 };
 
 export const createSubscription = async (req, res) => {
+    const { cameraId } = req.pisentryParams;
     const { user_id } = req.pisentryParams.authorizedUser;
     const { subscription } = req.body;
+
+    const isSubscriptionAcceptable = typeof subscription === 'object' && typeof subscription?.endpoint === 'string';
+
+    if (!isSubscriptionAcceptable) {
+        return res.status(400).json({ error: 'Subscription must be a valid Push subscription' });
+    }
 
     const jsonSubscription = JSON.stringify(subscription);
 
     const checkSubscriptionAlreadyExistSqlQuery = `
         SELECT subscription_id
         FROM notification_subscription
-        WHERE subscription = ? AND FK_user_id = ?
+        WHERE JSON_EXTRACT(subscription, "$.endpoint") = ? AND FK_camera_id = ? AND FK_user_id = ?
     `;
 
     let errorMessage = 'Could not check if subscription already exist';
@@ -135,24 +152,40 @@ export const createSubscription = async (req, res) => {
     try {
         const [checkSubscriptionAlreadyExistRows] = await dbConnectionPool.execute(
             checkSubscriptionAlreadyExistSqlQuery,
-            [jsonSubscription, user_id]
+            [subscription.endpoint, cameraId, user_id]
         );
 
         const subscriptionAlreadyExist = checkSubscriptionAlreadyExistRows.length > 0;
 
         if (subscriptionAlreadyExist) {
-            res.status(409).json({ error: 'Subscription already exist', subscription_id: checkSubscriptionAlreadyExistRows[0].subscription_id });
+            const existingSubscriptionId = checkSubscriptionAlreadyExistRows[0].subscription_id;
+
+            const updateExistingSubscriptionSqlQuery = `
+                UPDATE notification_subscription
+                SET subscription = ?
+                WHERE subscription_id = ? AND FK_camera_id = ? AND FK_user_id = ?
+            `;
+
+            errorMessage = 'Could not update existing subscription';
+
+            const [updateExistingSubscriptionRows] = await dbConnectionPool.execute(
+                updateExistingSubscriptionSqlQuery,
+                [jsonSubscription, existingSubscriptionId, cameraId, user_id]
+            );
+
+            res.status(201).json({ subscription_id: existingSubscriptionId });
+
             return;
         }
 
         const insertSubscriptionSqlQuery = `
-            INSERT INTO notification_subscription (subscription, FK_user_id) VALUES (?, ?)
+            INSERT INTO notification_subscription (subscription, FK_camera_id, FK_user_id) VALUES (?, ?, ?)
         `;
 
         errorMessage = 'Could not create subscription';
 
-        const [insertSubscriptionRows] = await dbConnectionPool.execute(insertSubscriptionSqlQuery, [jsonSubscription, user_id]);
-        res.json({ subscription_id: insertSubscriptionRows.insertId });
+        const [insertSubscriptionRows] = await dbConnectionPool.execute(insertSubscriptionSqlQuery, [jsonSubscription, cameraId, user_id]);
+        res.status(201).json({ subscription_id: insertSubscriptionRows.insertId });
     } catch (e) {
         console.log('Exception caught in createSubscription():', e);
         res.status(500).json({ error: errorMessage });
