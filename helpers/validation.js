@@ -5,8 +5,10 @@ export const isStringPositiveInteger = (stringValue) => {
 }
 
 export const isObjectEmpty = (obj) => {
+    if (typeof obj !== 'object') throw new Error('Argument of type "object" expected');
+    if (obj === null) return true;
     for (const key in obj) {
-        if (obj.hasOwnProperty(key)) return false;
+        if (obj?.hasOwnProperty(key)) return false;
     }
     return true;
 }
