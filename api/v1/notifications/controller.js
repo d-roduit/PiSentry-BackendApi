@@ -29,6 +29,41 @@ const ensureValidTopic = (topic) => {
     return validTopic;
 }
 
+export const getSubscriptions = async (req, res) => {
+    const { user_id } = req.pisentryParams.authorizedUser;
+    const { cameraId } = req.pisentryParams;
+    const { endpoint } = req.query;
+
+    let selectSubscriptionsSqlQuery = `
+        SELECT subscription_id, subscription, FK_camera_id, FK_user_id
+        FROM notification_subscription
+        WHERE FK_camera_id = ? AND FK_user_id = ?
+    `;
+
+    const sqlQueryVariables = [cameraId, user_id];
+
+    const hasEndpointFilter = typeof endpoint !== 'undefined';
+
+    if (hasEndpointFilter) {
+        const isEndpointAcceptable = typeof endpoint === 'string' && endpoint.length > 0;
+
+        if (!isEndpointAcceptable) {
+            return res.status(400).json({ error: 'Endpoint must be a non empty string' });
+        }
+
+        selectSubscriptionsSqlQuery += 'AND JSON_EXTRACT(subscription, "$.endpoint") = ?';
+        sqlQueryVariables.push(endpoint);
+    }
+
+    try {
+        const [rows] = await dbConnectionPool.execute(selectSubscriptionsSqlQuery, sqlQueryVariables);
+        res.json(rows);
+    } catch (e) {
+        console.log('Exception caught in getSubscriptions():', e);
+        res.status(500).json({ error: 'Could not get subscriptions' });
+    }
+};
+
 export const sendNotifications = async (req, res) => {
     const { user_id } = req.pisentryParams.authorizedUser;
     const { cameraId } = req.pisentryParams;
@@ -189,5 +224,30 @@ export const createSubscription = async (req, res) => {
     } catch (e) {
         console.log('Exception caught in createSubscription():', e);
         res.status(500).json({ error: errorMessage });
+    }
+};
+
+export const removeSubscription = async (req, res) => {
+    const { user_id } = req.pisentryParams.authorizedUser;
+    const { cameraId } = req.pisentryParams;
+    const { subscription } = req.body;
+
+    const isSubscriptionAcceptable = typeof subscription === 'object' && typeof subscription?.endpoint === 'string';
+
+    if (!isSubscriptionAcceptable) {
+        return res.status(400).json({ error: 'Subscription must be a valid Push subscription' });
+    }
+
+    let removeSubscriptionSqlQuery = `
+        DELETE FROM notification_subscription
+        WHERE JSON_EXTRACT(subscription, "$.endpoint") = ? AND FK_camera_id = ? AND FK_user_id = ?
+    `;
+
+    try {
+        const [rows] = await dbConnectionPool.execute(removeSubscriptionSqlQuery, [subscription.endpoint, cameraId, user_id]);
+        res.json(rows);
+    } catch (e) {
+        console.log('Exception caught in removeSubscription():', e);
+        res.status(500).json({ error: 'Could not remove subscription' });
     }
 };
