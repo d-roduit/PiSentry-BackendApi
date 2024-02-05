@@ -9,36 +9,23 @@ export const getRecordings = async (req, res) => {
 
     const sqlQuery = `
         SELECT
-            subquery.recordings_date AS 'recordings_date',
-            JSON_ARRAYAGG(JSON_OBJECT(
-                'detection_session_id', subquery.detection_session_id,
-                'recordings', subquery.recordings
-            )) AS 'detection_sessions'
-        FROM (
-            SELECT
-                DATE(recording.recorded_at) AS 'recordings_date',
-                detection_session.session_id AS 'detection_session_id',
-                JSON_ARRAYAGG(JSON_OBJECT(
-                    'recording_id', recording.recording_id,
-                    'recorded_at', recording.recorded_at,
-                    'recording_filename', recording.recording_filename,
-                    'recording_extension', recording.recording_extension,
-                    'thumbnail_filename', recording.thumbnail_filename,
-                    'thumbnail_extension', recording.thumbnail_extension,
-                    'object_type', detectable_object.object_type,
-                    'camera_id', recording.FK_camera_id
-                )) AS 'recordings'
-            FROM recording
-                JOIN detection_session ON recording.FK_detection_session_id = detection_session.session_id
-                JOIN detectable_object ON recording.FK_detectable_object_id = detectable_object.object_id
-            WHERE detection_session.FK_user_id = ?
-            GROUP BY
-                detection_session.session_id,
-                DATE(recording.recorded_at)
-            ORDER BY detection_session.session_id DESC
-        ) AS subquery
-        GROUP BY subquery.recordings_date
-        ORDER BY subquery.recordings_date DESC
+            recording.recording_id AS 'recording_id',
+            recording.recorded_at AS 'recorded_at',
+            recording.recording_filename AS 'recording_filename',
+            recording.recording_extension AS 'recording_extension',
+            recording.thumbnail_filename AS 'thumbnail_filename',
+            recording.thumbnail_extension AS 'thumbnail_extension',
+            detectable_object.object_id AS 'object_id',
+            detectable_object.object_type AS 'object_type',
+            detectable_object.object_weight AS 'object_weight',
+            detectable_object.object_order AS 'object_order',
+            recording.FK_camera_id AS 'camera_id',
+            detection_session.session_id AS 'detection_session_id'
+        FROM recording
+            JOIN detection_session ON recording.FK_detection_session_id = detection_session.session_id
+            JOIN detectable_object ON recording.FK_detectable_object_id = detectable_object.object_id
+        WHERE detection_session.FK_user_id = ?
+        ORDER BY recording.recorded_at DESC
     `;
 
     try {
