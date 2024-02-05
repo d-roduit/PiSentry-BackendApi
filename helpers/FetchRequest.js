@@ -1,18 +1,24 @@
+const defaultFetchRequestOptionsObject = {
+    fetchRequest: {
+        throwException: false,
+    },
+};
+
 export default class FetchRequest {
 
     static ResponseType = class ResponseTypeEnum {
-        static Json = new ResponseTypeEnum("Json");
-        static Text = new ResponseTypeEnum("Text");
-        static FormData = new ResponseTypeEnum("FormData");
-        static Blob = new ResponseTypeEnum("Blob");
-        static ArrayBuffer = new ResponseTypeEnum("ArrayBuffer");
-        static Clone = new ResponseTypeEnum("Clone");
+        static Json = new ResponseTypeEnum('Json');
+        static Text = new ResponseTypeEnum('Text');
+        static FormData = new ResponseTypeEnum('FormData');
+        static Blob = new ResponseTypeEnum('Blob');
+        static ArrayBuffer = new ResponseTypeEnum('ArrayBuffer');
+        static Clone = new ResponseTypeEnum('Clone');
 
         constructor(name) {
             this.name = name
         }
     };
-    static defaultOptionsObject = {};
+    static defaultOptionsObject = defaultFetchRequestOptionsObject;
     static defaultResponseTypeValue = null;
     static defaultSuccessCallback = null;
     static defaultResponseNotOkCallback = null;
@@ -35,7 +41,7 @@ export default class FetchRequest {
         if (options === null || typeof options !== 'object') {
             throw new Error('defaultOptions parameter must be an object');
         }
-        FetchRequest.defaultOptionsObject = options;
+        FetchRequest.defaultOptionsObject = { ...defaultFetchRequestOptionsObject, ...options };
         return this;
     }
 
@@ -75,7 +81,7 @@ export default class FetchRequest {
         if (options === null || typeof options !== 'object') {
             throw new Error('options parameter must be an object');
         }
-        this.optionsObject = options;
+        this.optionsObject = { ...defaultFetchRequestOptionsObject, ...options };
         return this;
     }
 
@@ -113,56 +119,59 @@ export default class FetchRequest {
 
     async make() {
         let response = null;
+        const options = this.optionsObject ?? FetchRequest.defaultOptionsObject;
 
         try {
-            const options = this.optionsObject ?? FetchRequest.defaultOptionsObject;
             response = await fetch(this.url, options);
 
             if (!response.ok) {
                 const responseNotOkCallback = this.responseNotOkCallback ?? FetchRequest.defaultResponseNotOkCallback;
-                if (responseNotOkCallback !== null) {
+                if (responseNotOkCallback) {
                     responseNotOkCallback(response);
                 }
-                return;
+
+                return { notOk: true, response };
             }
 
-            let responseData = null;
+            let data = null;
             switch (this.responseTypeValue ?? FetchRequest.defaultResponseTypeValue) {
                 case FetchRequest.ResponseType.Json:
-                    responseData = await response.json();
+                    data = await response.json();
                     break;
                 case FetchRequest.ResponseType.Text:
-                    responseData = await response.text();
+                    data = await response.text();
                     break;
                 case FetchRequest.ResponseType.FormData:
-                    responseData = await response.formData();
+                    data = await response.formData();
                     break;
                 case FetchRequest.ResponseType.Blob:
-                    responseData = await response.blob();
+                    data = await response.blob();
                     break;
                 case FetchRequest.ResponseType.ArrayBuffer:
-                    responseData = await response.arrayBuffer();
+                    data = await response.arrayBuffer();
                     break;
                 case FetchRequest.ResponseType.Clone:
-                    responseData = await response.clone();
+                    data = await response.clone();
                     break;
             }
 
             const successCallback = this.successCallback ?? FetchRequest.defaultSuccessCallback;
-            if (successCallback !== null) {
-                successCallback(responseData, response);
-                return;
+            if (successCallback) {
+                successCallback(data, response);
             }
 
-            return { responseData, response };
+            return { data, response };
         } catch (err) {
             const exceptionCallback = this.exceptionCallback ?? FetchRequest.defaultExceptionCallback;
-            if (exceptionCallback !== null) {
+            if (exceptionCallback) {
                 exceptionCallback(err, response);
-                return;
             }
 
-            throw err;
+            if (options.fetchRequest?.throwException === true) {
+                throw err;
+            }
+
+            return { exception: err, response };
         }
     }
 }
