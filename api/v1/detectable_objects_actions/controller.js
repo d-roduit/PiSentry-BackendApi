@@ -1,5 +1,6 @@
 import dbConnectionPool from '../../../dbConnection.js';
 import { isObjectEmpty, isStringPositiveInteger } from '../../../helpers/validation.js';
+import { requestCameraToUpdateItsConfig } from '../../../helpers/utilsFunctions.js';
 
 export const getDetectableObjectsActions = async (req, res) => {
     const { user_id } = req.pisentryParams.authorizedUser;
@@ -127,5 +128,12 @@ export const patchDetectableObjectAction = async (req, res) => {
     } catch (e) {
         console.log('Exception caught in patchDetectableObjectAction():', e);
         res.status(500).json({ error: 'Could not patch detectable object action' });
+        return;
     }
+
+    await requestCameraToUpdateItsConfig({
+        callerName: 'patchDetectableObjectAction',
+        cameraId,
+        userId: user_id
+    });
 };

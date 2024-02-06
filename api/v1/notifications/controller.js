@@ -2,6 +2,7 @@ import webpush from 'web-push';
 import config from '../../../config/config.js';
 import dbConnectionPool from '../../../dbConnection.js';
 import { isObjectEmpty } from '../../../helpers/validation.js';
+import { requestCameraToUpdateItsConfig } from '../../../helpers/utilsFunctions.js';
 
 const { vapidPublicKey, vapidPrivateKey } = config;
 
@@ -224,7 +225,14 @@ export const createSubscription = async (req, res) => {
     } catch (e) {
         console.log('Exception caught in createSubscription():', e);
         res.status(500).json({ error: errorMessage });
+        return;
     }
+
+    await requestCameraToUpdateItsConfig({
+        callerName: 'createSubscription',
+        cameraId,
+        userId: user_id,
+    });
 };
 
 export const removeSubscription = async (req, res) => {
@@ -249,5 +257,12 @@ export const removeSubscription = async (req, res) => {
     } catch (e) {
         console.log('Exception caught in removeSubscription():', e);
         res.status(500).json({ error: 'Could not remove subscription' });
+        return;
     }
+
+    await requestCameraToUpdateItsConfig({
+        callerName: 'removeSubscription',
+        cameraId,
+        userId: user_id,
+    });
 };

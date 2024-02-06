@@ -4,8 +4,8 @@ import {
     checkStringType,
     checkStringLength,
     checkTimeFormat,
-    checkBooleanType
 } from '../../../helpers/validation.js';
+import { requestCameraToUpdateItsConfig } from '../../../helpers/utilsFunctions.js';
 
 export const getCameras = async (req, res) => {
     const { user_id } = req.pisentryParams.authorizedUser;
@@ -87,5 +87,12 @@ export const patchCamera = async (req, res) => {
     } catch (e) {
         console.log('Exception caught in patchCamera():', e);
         res.status(500).json({ error: 'Could not patch camera' });
+        return;
     }
+
+    await requestCameraToUpdateItsConfig({
+        callerName: 'patchCamera',
+        cameraId,
+        userId: user_id,
+    });
 };
