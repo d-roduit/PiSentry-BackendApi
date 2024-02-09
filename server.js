@@ -16,12 +16,9 @@ app.use(requireAuth);
 
 app.use('/v1', v1Router);
 
-app.listen(port, () => console.log(`Express server listening on port ${port}...`));
-
 /**
  * Routes
  */
-
 app.get('/thuan', (req, res) => res.json('Thubiduuuu awaaa je t\'AIMEEE <3'));
 
 // 404 middleware.
@@ -34,3 +31,24 @@ const error404Middleware = (req, res) => {
 };
 
 app.use(error404Middleware);
+
+const httpsEnabled = !!(process.env.HTTPS_PORT && process.env.HTTPS_KEY && process.env.HTTPS_CERT);
+
+if (httpsEnabled) {
+    const fs = await import('fs');
+    const http = await import('http');
+    const https = await import('https');
+
+    const privateKey  = fs.readFileSync(`./https_certificates/${process.env.HTTPS_KEY}`, 'utf8');
+    const certificate = fs.readFileSync(`./https_certificates/${process.env.HTTPS_CERT}`, 'utf8');
+    const credentials = { key: privateKey, cert: certificate };
+    const httpsPort = process.env.HTTPS_PORT;
+
+    const httpServer = http.createServer(app);
+    const httpsServer = https.createServer(credentials, app);
+
+    httpServer.listen(port, () => console.log(`Express server listening HTTP on port ${port}...`));
+    httpsServer.listen(httpsPort, () => console.log(`Express server listening HTTPS on port ${httpsPort}...`));
+} else {
+    app.listen(port, () => console.log(`Express server listening on port ${port}...`));
+}
