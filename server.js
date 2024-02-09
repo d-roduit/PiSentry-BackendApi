@@ -12,25 +12,19 @@ app.use(cors());
 
 app.use(express.json()); // For parsing application/json request body
 
-app.use(requireAuth);
+app.use(requireAuth); // Placed first for authentication to be done before any other route handler
 
 app.use('/v1', v1Router);
 
-/**
- * Routes
- */
-app.get('/thuan', (req, res) => res.json('Thubiduuuu awaaa je t\'AIMEEE <3'));
+// Quick and easy to remember test route
+app.get('/thuan', (req, res) => res.json('Test route made of love <3'));
 
-// 404 middleware.
-// Since it's placed last it will be
-// the last middleware called, if all others
-// invoke next() and do not respond.
 const error404Middleware = (req, res) => {
     res.status(404);
     res.send({ error: "Sorry, can't find that" });
 };
 
-app.use(error404Middleware);
+app.use(error404Middleware); // Placed last to be called if no other route handler responded
 
 const httpsEnabled = !!(process.env.HTTPS_PORT && process.env.HTTPS_KEY && process.env.HTTPS_CERT);
 
